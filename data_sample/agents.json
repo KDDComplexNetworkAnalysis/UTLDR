@@ -1,0 +1,13 @@
+{"aid": 1, "household": "H1", "census": "C1", "age": 25, "gender": "M", "work": "W1_1", "school": null, "activity": {"census": 0.3, "work": 0.6}}
+{"aid": 2, "household": "H1", "census": "C1", "age": 25, "gender": "F", "work": "W1_1", "school": null, "activity": {"census": 0.3, "work": 0.6}}
+{"aid": 3, "household": "H1", "census": "C1", "age": 30, "gender": "M", "work": "W1_1", "school": null, "activity": {"census": 0.3, "work": 0.5}}
+{"aid": 4, "household": "H2", "census": "C1", "age": 35, "gender": "F", "work": "W1_2", "school": null, "activity": {"census": 0.3, "work": 0.5}}
+{"aid": 5, "household": "H2", "census": "C1", "age": 45, "gender": "F", "work": "W1_2", "school": null, "activity": {"census": 0.2, "work": 0.4}}
+{"aid": 6, "household": "H2", "census": "C1", "age": 47, "gender": "M", "work": "W1_2", "school": null, "activity": {"census": 0.2, "work": 0.3}}
+{"aid": 7, "household": "H3", "census": "C2", "age": 50, "gender": "F", "work": "W1_2", "school": null, "activity": {"census": 0.2, "work": 0.3}}
+{"aid": 8, "household": "H4", "census": "C2", "age": 51, "gender": "M", "work": "W2", "school": null, "activity": {"census": 0.2, "work": 0.3}}
+{"aid": 9, "household": "H4", "census": "C2", "age": 60, "gender": "F", "work": "W2", "school": null, "activity": {"census": 0.2, "work": 0.2}}
+{"aid": 10, "household": "H3", "census": "C2", "age": 65, "gender": "M", "work": "W2", "school": null, "activity": {"census": 0.2, "work": 0.2}}
+{"aid": 11, "household": "H1", "census": "C1", "age": 10, "gender": "M", "work": null, "school": "S1_1", "activity": {"census": 0.5, "school": 0.8}}
+{"aid": 12, "household": "H2", "census": "C1", "age": 10, "gender": "F", "work": null, "school": "S1_1", "activity": {"census": 0.5, "school": 0.8}}
+{"aid": 13, "household": "H4", "census": "C2", "age": 11, "gender": "F", "work": null, "school": "S1_2", "activity": {"census": 0.5, "school": 0.8}}

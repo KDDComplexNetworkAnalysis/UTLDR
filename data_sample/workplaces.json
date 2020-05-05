@@ -1,0 +1,26 @@
+{
+  "W1": {
+    "category": "A",
+    "parent": null,
+    "child": ["W1_1", "W1_2"],
+    "agents": [1, 2, 3, 4, 5, 6, 7]
+  },
+  "W1_1": {
+    "category": "A",
+    "parent": "W1",
+    "child": null,
+    "agents": [1, 2, 3]
+  },
+  "W1_2": {
+    "category": "A",
+    "parent": "W1",
+    "child": null,
+    "agents": [4, 5, 6, 7]
+  },
+  "W2": {
+    "category": "B",
+    "parent": null,
+    "child": null,
+    "agents": [8, 9, 10]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "H1": {
+    "category": null,
+    "parent": null,
+    "child": null,
+    "agents": [1, 2, 3, 11]
+  },
+  "H2": {
+    "category": null,
+    "parent": null,
+    "child": null,
+    "agents": [4, 5, 6, 12]
+  },
+  "H3": {
+    "category": null,
+    "parent": null,
+    "child": null,
+    "agents": [7, 10]
+  },
+  "H4": {
+    "category": null,
+    "parent": null,
+    "child": null,
+    "agents": [8, 9, 13]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "S1": {
+    "category": "High School",
+    "parent": null,
+    "child": ["S1_1", "S1_2"],
+    "agents": [11, 12, 13]
+  },
+  "S1_1": {
+    "category": "High School",
+    "parent": "S1",
+    "child": null,
+    "agents": [11, 12]
+  },
+  "S1_2": {
+    "category": "High School",
+    "parent": "S1",
+    "child": null,
+    "agents": [13]
+  }
+}

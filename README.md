@@ -10,3 +10,11 @@ UTLDR name is an acronym of the "meta-compartments" that compose it: **U**ndetec
 It requires as input a population of agents (preferibly characterized by age/gender as well as working place) tied in a social tissue (it is not a mean field approach).
 Household structures as well as schools, workingplaces and other social circles are assumend to be embedded within the social network and annotated at agent level.
 
+## Repository content
+
+- UTLDR jupyter notebook with incremental examples of the base model
+- UTLDR2 source code: extension of UTLDR that leverages geographical tesselation (at census cell level)
+
+## Dependencies
+
+- [ndlib](https://github.com/GiulioRossetti/ndlib)
