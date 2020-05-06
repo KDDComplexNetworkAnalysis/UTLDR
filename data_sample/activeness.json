@@ -1,0 +1,15 @@
+{
+  "gender": {
+    "M": {
+      "work": 0.8,
+      "census": 0.2,
+      "school": 0.9
+    },
+    "F": {
+      "work": 0.8,
+      "census": 0.4,
+      "school": 0.9
+    }
+  }
+
+}

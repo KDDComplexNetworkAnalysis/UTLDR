@@ -14,13 +14,14 @@ __email__ = "giulio.rossetti@gmail.com"
 class UTLDRTest(unittest.TestCase):
 
     def test_utldr(self):
+        activeness = SocialActiveness(filename="data_sample/activeness.json")
         households = SocialContext(filename="data_sample/households.json")
         workplaces = SocialContext(filename="data_sample/workplaces.json")
         schools = SocialContext(filename="data_sample/schools.json")
         census = SocialContext(filename="data_sample/census.json")
         agents = AgentList(filename="data_sample/agents.json")
 
-        ctx = Contexts(households, census, workplaces, schools)
+        ctx = Contexts(households, census, workplaces, schools, activeness)
 
         model = UTLDR2(agents=agents, contexts=ctx)
         config = mc.Configuration()
@@ -81,11 +82,15 @@ class UTLDRTest(unittest.TestCase):
         model.unset_lockdown(['W1_1', 'W1_2'])
         iterations = model.iteration_bunch(10)
         self.assertEqual(len(iterations), 10)
-        iterations = model.iteration_bunch(10, node_status=False)
-        self.assertEqual(len(iterations), 10)
+        iterations = model.iteration_bunch(100, node_status=False)
+        self.assertEqual(len(iterations), 100)
 
 
 class AgentDataTest(unittest.TestCase):
+
+    def test_SocialActiveness(self):
+        ac = SocialActiveness("data_sample/activeness.json")
+        self.assertIsInstance(ac.activity, dict)
 
     def test_SocialContext(self):
         sc = SocialContext()
@@ -112,13 +117,14 @@ class AgentDataTest(unittest.TestCase):
         self.assertIsInstance(ctx.get_workplace_sample("W1", activity=1), np.ndarray)
 
     def test_agents(self):
+        activeness = SocialActiveness(filename="data_sample/activeness.json")
         households = SocialContext(filename="data_sample/households.json")
         workplaces = SocialContext(filename="data_sample/workplaces.json")
         schools = SocialContext(filename="data_sample/schools.json")
         census = SocialContext(filename="data_sample/census.json")
         agents = AgentList(filename="data_sample/agents.json")
 
-        ctx = Contexts(households, census, workplaces, schools)
+        ctx = Contexts(households, census, workplaces, schools, activeness)
         for census in ctx.get_census():
             population = ctx.get_census_sample(census)
             for aid in population:

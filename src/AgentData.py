@@ -5,6 +5,33 @@ from netdispatch import AGraph
 import networkx as nx
 
 
+class SocialActiveness(object):
+
+    def __init__(self, filename=None):
+        self.activity = {}
+        if filename is not None:
+            self.load(filename)
+        if len(self.activity) > 0:
+            self.categories = set([k for _, x in self.activity.items() for _, y in x.items() for k in y])
+        else:
+            self.categories = []
+
+    def load(self, filename):
+        with open(filename) as f:
+            self.activity = json.load(f)
+
+    def get_value(self, agent, category='all'):
+        segment = list(self.activity.keys())[0]
+        if category in self.categories:
+            if segment == 'age':
+                return self.activity['age'][agent.age][category]
+            if segment == 'gender':
+                return self.activity['gender'][agent.gender][category]
+        else:
+            return 1
+
+
+
 class SocialContext(object):
 
     def __init__(self, cells=None, filename=None):
@@ -44,16 +71,15 @@ class SocialContext(object):
 class Contexts(object):
 
     def __init__(self, households: SocialContext, census: SocialContext,
-                 workplaces: SocialContext = None, schools: SocialContext = None):
+                 workplaces: SocialContext = None, schools: SocialContext = None, activeness: SocialActiveness=None):
 
+        self.activeness = activeness
         self.contexts = {
             'households': households,
             'census': census,
             'workplaces': workplaces,
             'schools': schools
         }
-
-
 
     def get_household(self, hid):
         return self.contexts['households'].get_sample_agents(hid)
@@ -73,12 +99,16 @@ class Contexts(object):
     def get_neighbors(self, agent, restrictions=False):
         household = self.get_household(agent.household)
         if not restrictions:
-            census = self.get_census_sample(agent.census, agent.activity['census'])
+
+            activeness = self.activeness.get_value(agent, 'census')
+            census = self.get_census_sample(agent.census, activeness)
             work, school = [], []
             if agent.work is not None:
-                work = self.get_workplace_sample(agent.work, agent.activity['work'])
+                activeness = self.activeness.get_value(agent, 'work')
+                work = self.get_workplace_sample(agent.work, activeness)
             if agent.school is not None:
-                school = self.get_school_sample(agent.school, agent.activity['school'])
+                activeness = self.activeness.get_value(agent, 'school')
+                school = self.get_school_sample(agent.school, activeness)
             return list(set(household) | set(census) | set(work) | set(school))
         return list(household)
 
@@ -137,7 +167,7 @@ class AgentList(AGraph):
             for row in f:
                 ag = json.loads(row)
                 ag = Agent(ag['aid'], ag['household'], ag['census'], ag['gender'], ag['age'],
-                           ag['work'], ag['school'], ag['activity'])
+                           ag['work'], ag['school'])# , ag['activity'])
                 self.add_agent(ag)
 
 
@@ -150,7 +180,7 @@ class Agent(object):
     age: str = None
     work: str = None
     school: str = None
-    activity: dict = None
+    # activity: dict = None
 
 
 
