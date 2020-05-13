@@ -1,0 +1,90 @@
+{
+  "age": {
+    "5": {
+      "work": 0,
+      "census": 0.01,
+      "school": 0
+    },
+    "10": {
+      "work": 0,
+      "census": 0.04,
+      "school": 0.9
+    },
+    "15": {
+      "work": 0,
+      "census": 0.09,
+      "school": 0.9
+    },
+    "20": {
+      "work": 0,
+      "census": 0.2,
+      "school": 0.9
+    },
+    "25": {
+      "work": 0.4,
+      "census": 0.4,
+      "school": 0.4
+    },
+    "30": {
+      "work": 0.45,
+      "census": 0.35,
+      "school": 0
+    },
+    "35": {
+      "work": 0.45,
+      "census": 0.2,
+      "school": 0
+    },
+    "40": {
+      "work": 0.4,
+      "census": 0.2,
+      "school": 0
+    },
+    "45": {
+      "work": 0.4,
+      "census": 0.15,
+      "school": 0
+    },
+    "50": {
+      "work": 0.4,
+      "census": 0.15,
+      "school": 0
+    },
+    "55": {
+      "work": 0.35,
+      "census": 0.1,
+      "school": 0
+    },
+    "60": {
+      "work": 0.35,
+      "census": 0.1,
+      "school": 0
+    },
+    "65": {
+      "work": 0.35,
+      "census": 0.08,
+      "school": 0
+    },
+    "70": {
+      "work": 0,
+      "census": 0.07,
+      "school": 0
+    },
+    "75": {
+      "work": 0.8,
+      "census": 0.06,
+      "school": 0
+    },
+    "80": {
+      "work": 0,
+      "census": 0.05,
+      "school": 0
+    },
+    "80+": {
+      "work": 0,
+      "census": 0.02,
+      "school": 0
+    }
+  }
+
+}
