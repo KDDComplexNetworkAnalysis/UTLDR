@@ -4,6 +4,7 @@ import unittest
 
 import ndlib.models.ModelConfig as mc
 from .UTLDR import UTLDR3
+#from .FatalityRateTrend import FatalityRateTrend, R0Trend
 from .AgentData import *
 
 __author__ = 'Giulio Rossetti'
@@ -81,6 +82,17 @@ class UTLDRTest(unittest.TestCase):
         self.assertEqual(len(iterations), 10)
         iterations = model.iteration_bunch(100, node_status=False)
         self.assertEqual(len(iterations), 100)
+
+        trends = model.build_trends(iterations)
+
+        # Visualization
+        #viz = FatalityRateTrend(model, trends)
+        #viz.normalized = False
+        #viz.plot(filename="test.pdf")
+
+        #viz = R0Trend(model, trends, displacement=1)
+        #viz.normalized = False
+        #viz.plot(filename="test_r0.pdf")
 
 
 class AgentDataTest(unittest.TestCase):

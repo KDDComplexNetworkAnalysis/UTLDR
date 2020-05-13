@@ -346,13 +346,13 @@ class UTLDR3(DiffusionModel):
             ####################### Resolved Compartments ###########################
 
             elif u_status == self.available_statuses['Recovered']:
-                del self.c_history[u]
+                self.c_history.delete(u)
 #                immunity = np.random.random_sample()
 #                if immunity < self.__get_threshold(ag, 's'):
 #                    actual_status[u] = self.available_statuses['Susceptible']
 
             elif u_status == self.available_statuses['Dead']:
-                del self.c_history[u]
+                self.c_history.delete(u)
 
             tst = {self.available_statuses['Susceptible']: None, self.available_statuses['Dead']: None, self.available_statuses['Recovered']: None}
             if self.status[u] not in tst:
@@ -526,8 +526,8 @@ class UTLDR3(DiffusionModel):
 
             if ag.gender in self.params['model'][parameter]:
                 nclass = ag.gender
-            elif ag.age in self.params['model'][parameter]:
-                nclass = ag.age
+            elif str(ag.age) in self.params['model'][parameter]:
+                nclass = str(ag.age)
             else:
                 raise ValueError(f"Parameter {parameter} not specified for {ag}")
 
@@ -645,12 +645,11 @@ class UTLDR3(DiffusionModel):
 
         return actual_status
 
-
     def __get_mobility(self, ag):
-        agent_municipality = self.contexts.contexts['census'].cells[ag.census]['parent'][0]
-        agent_province = self.contexts.contexts['census'].cells[agent_municipality]['parent'][0]
-        region = self.contexts.contexts['census'].cells[agent_province]['parent'][0]
-        provinces = self.contexts.contexts['census'].cells[region]['child']
+        agent_municipality = self.contexts.contexts['census'].cells[str(ag.census)]['parent'][0]
+        agent_province = self.contexts.contexts['census'].cells[str(agent_municipality)]['parent'][0]
+        region = self.contexts.contexts['census'].cells[str(agent_province)]['parent'][0]
+        provinces = self.contexts.contexts['census'].cells[str(region)]['child']
         provinces = list(set(provinces) - set([agent_province]))
 
         # @todo: tune probability from data
@@ -659,11 +658,12 @@ class UTLDR3(DiffusionModel):
         provinces.append(agent_province)
 
         selected_province = np.random.choice(provinces, 1, p=p_weights)[0]
-        municipalities_selected_province = self.contexts.contexts['census'].cells[selected_province]['child']
+        municipalities_selected_province = self.contexts.contexts['census'].cells[str(selected_province)]['child']
         selected_municipality = np.random.choice(municipalities_selected_province, 1)[0]
-        census_selected_municipality = self.contexts.contexts['census'].cells[selected_municipality]['child']
-        selected_census = np.random.choice(census_selected_municipality, 1)[0]
+        census_selected_municipality = self.contexts.contexts['census'].cells[str(selected_municipality)]['child']
+        if census_selected_municipality is not None:
+            selected_census = np.random.choice(census_selected_municipality, 1)[0]
+            neighbors = self.contexts.get_neighbors(ag, weekend=True, other_census=selected_census)
+            return neighbors
 
-        neighbors = self.contexts.get_neighbors(ag, weekend=True, other_census=selected_census)
-
-        return neighbors
+        return []
