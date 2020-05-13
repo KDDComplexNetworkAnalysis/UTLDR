@@ -28,7 +28,7 @@ class SocialActiveness(object):
         segment = list(self.activity.keys())[0]
         if category in self.categories:
             if segment == 'age':
-                return self.activity['age'][agent.age][category]
+                return self.activity['age'][str(agent.age)][category]
             if segment == 'gender':
                 return self.activity['gender'][agent.gender][category]
         else:
@@ -54,7 +54,6 @@ class SocialContext(object):
                 self.cells = dict(self.cells, **json.load(f))
 
     def get_sample_agents(self, cell, activity=1):
-
         try:
             return np.random.choice(self.cells[cell]['agents'], int(len(self.cells[cell]['agents'])*activity))
         except:
