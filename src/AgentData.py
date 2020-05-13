@@ -1,24 +1,28 @@
 import numpy as np
 from dataclasses import dataclass
+from collections import defaultdict
 import json
-from netdispatch import AGraph
-import networkx as nx
+import gzip
 
 
 class SocialActiveness(object):
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, gz=False):
         self.activity = {}
         if filename is not None:
-            self.load(filename)
+            self.load(filename, gz)
         if len(self.activity) > 0:
             self.categories = set([k for _, x in self.activity.items() for _, y in x.items() for k in y])
         else:
             self.categories = []
 
-    def load(self, filename):
-        with open(filename) as f:
-            self.activity = json.load(f)
+    def load(self, filename, gz=False):
+        if not gz:
+            with open(filename) as f:
+                self.activity = json.load(f)
+        else:
+            with gzip.open(filename) as f:
+                self.activity = json.load(f)
 
     def get_value(self, agent, category='all'):
         segment = list(self.activity.keys())[0]
@@ -31,20 +35,30 @@ class SocialActiveness(object):
             return 1
 
 
-
 class SocialContext(object):
 
-    def __init__(self, cells=None, filename=None):
+    def __init__(self, cells=None, filename=None, gz=False):
         if cells is not None:
             self.cells = cells
         elif filename is not None:
-            self.load(filename)
+            self.load(filename, gz)
         else:
             self.cells = {}
 
+    def update(self, filename=None, gz=False):
+        if not gz:
+            with open(filename) as f:
+                self.cells = json.load(f)
+        else:
+            with gzip.open(filename) as f:
+                self.cells = dict(self.cells, **json.load(f))
+
     def get_sample_agents(self, cell, activity=1):
-        return np.random.choice(self.cells[cell]['agents'],
-                                int(len(self.cells[cell]['agents'])*activity))
+
+        try:
+            return np.random.choice(self.cells[cell]['agents'], int(len(self.cells[cell]['agents'])*activity))
+        except:
+            return []
 
     def get_category(self, cell):
         return self.cells[cell]['category']
@@ -55,9 +69,13 @@ class SocialContext(object):
     def get_child(self, cell):
         return self.cells[cell]['child']
 
-    def load(self, filename):
-        with open(filename) as f:
-            self.cells = json.load(f)
+    def load(self, filename, gz=False):
+        if not gz:
+            with open(filename) as f:
+                self.cells = json.load(f)
+        else:
+            with gzip.open(filename) as f:
+                self.cells = json.load(f)
 
     def get_contexts(self, leaf=True):
         for c in self.cells:
@@ -96,65 +114,40 @@ class Contexts(object):
     def get_workplace_sample(self, wid, activity=1):
         return self.contexts['workplaces'].get_sample_agents(wid, activity)
 
-    def get_neighbors(self, agent, restrictions=False):
+    def get_neighbors(self, agent, restrictions=False, weekend=False, other_census=None):
         household = self.get_household(agent.household)
         if not restrictions:
 
             activeness = self.activeness.get_value(agent, 'census')
-            census = self.get_census_sample(agent.census, activeness)
+            if other_census is None:
+                census = self.get_census_sample(agent.census, activeness)
+            else:
+                census = self.get_census_sample(other_census, activeness)
+
             work, school = [], []
-            if agent.work is not None:
-                activeness = self.activeness.get_value(agent, 'work')
-                work = self.get_workplace_sample(agent.work, activeness)
-            if agent.school is not None:
-                activeness = self.activeness.get_value(agent, 'school')
-                school = self.get_school_sample(agent.school, activeness)
+
+            if not weekend:
+                if agent.work is not None:
+                    activeness = self.activeness.get_value(agent, 'work')
+                    work = self.get_workplace_sample(agent.work, activeness)
+                if agent.school is not None:
+                    activeness = self.activeness.get_value(agent, 'school')
+                    school = self.get_school_sample(agent.school, activeness)
+
             return list(set(household) | set(census) | set(work) | set(school))
         return list(household)
 
 
-class AgentList(AGraph):
+class AgentList(object):
 
-    def __init__(self, filename=None):
-
-        super().__init__(nx.Graph())
+    def __init__(self, filename=None, gz=False):
 
         self.population = {}
         if filename is not None:
-            self.load(filename)
-
-    def __check_type(self):
-        pass
-
-    def nodes(self):
-        pass
-
-    def edges(self):
-        pass
+            self.load(filename, gz)
 
     def number_of_nodes(self):
         return len(self.population)
-
-    def neighbors(self, node):
-        pass
-
-    def predecessors(self, node):
-        pass
-
-    def successors(self, node):
-        pass
-
-    def get_edge_attributes(self, attribute):
-        pass
-
-    def get_node_attributes(self, attribute):
-        pass
-
-    def add_edges(self, node, endpoints):
-        pass
-
-    def remove_edges(self, node, endpoints):
-        pass
 
     def add_agent(self, agent):
         self.population[agent.aid] = agent
@@ -162,14 +155,42 @@ class AgentList(AGraph):
     def get_agent(self, aid):
         return self.population[aid]
 
-    def load(self, filename):
-        with open(filename) as f:
-            for row in f:
-                ag = json.loads(row)
-                ag = Agent(ag['aid'], ag['household'], ag['census'], ag['gender'], ag['age'],
-                           ag['work'], ag['school'])# , ag['activity'])
-                self.add_agent(ag)
+    def load(self, filename, gz=False):
 
+        if not gz:
+            with open(filename) as f:
+                for row in f:
+                    ag = json.loads(row)
+                    ag = Agent(ag['aid'], ag['household'], ag['census'], ag['gender'], ag['age'],
+                               ag['work'], ag['school'])
+                    self.add_agent(ag)
+        else:
+            with gzip.open(filename) as f:
+                for row in f:
+                    ag = json.loads(row)
+                    ag = Agent(ag['aid'], ag['household'], ag['census'], ag['gender'], ag['age'],
+                               ag['work'], ag['school'])
+                    self.add_agent(ag)
+
+
+class ContactHistory(object):
+
+    def __init__(self):
+        self.agent_to_queue = defaultdict(list)
+
+    def add_to_queue(self, node, queue):
+        self.agent_to_queue[node].extend(queue)
+
+    def get_contacts(self, node, iteration, delta_iteration):
+        queue = self.agent_to_queue[node]
+        res = [aid for aid, t in queue if delta_iteration <= iteration-t]
+        return res
+
+    def compact_queue(self, node, iteration, delta_iteration):
+        self.agent_to_queue[node] = [(n, t) for n, t in self.agent_to_queue[node] if delta_iteration <= iteration-t]
+
+    def delete(self, node):
+        del self.agent_to_queue[node]
 
 @dataclass
 class Agent(object):
@@ -180,7 +201,6 @@ class Agent(object):
     age: str = None
     work: str = None
     school: str = None
-    # activity: dict = None
 
 
 
