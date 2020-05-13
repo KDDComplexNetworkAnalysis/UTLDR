@@ -11,3 +11,4 @@
 {"aid": 11, "household": "H1", "census": "C1", "age": 10, "gender": "M", "work": null, "school": "S1_1"}
 {"aid": 12, "household": "H2", "census": "C1", "age": 10, "gender": "F", "work": null, "school": "S1_1"}
 {"aid": 13, "household": "H4", "census": "C2", "age": 11, "gender": "F", "work": null, "school": "S1_2"}
+{"aid": 14, "household": "H5", "census": "C3", "age": 35, "gender": "F", "work": null, "school": "S1_2"}

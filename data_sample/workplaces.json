@@ -3,24 +3,44 @@
     "category": "A",
     "parent": null,
     "child": ["W1_1", "W1_2"],
-    "agents": [1, 2, 3, 4, 5, 6, 7]
+    "agents": [1, 2, 3, 4, 5, 6, 7],
+    "nagents": 7,
+    "age": null,
+    "municipality": null,
+    "province": null,
+    "region": null
   },
   "W1_1": {
     "category": "A",
     "parent": "W1",
     "child": null,
-    "agents": [1, 2, 3]
+    "agents": [1, 2, 3],
+    "nagents": 3,
+    "age": null,
+    "municipality": null,
+    "province": null,
+    "region": null
   },
   "W1_2": {
     "category": "A",
     "parent": "W1",
     "child": null,
-    "agents": [4, 5, 6, 7]
+    "agents": [4, 5, 6, 7],
+    "nagents": 4,
+    "age": null,
+    "municipality": null,
+    "province": null,
+    "region": null
   },
   "W2": {
     "category": "B",
     "parent": null,
     "child": null,
-    "agents": [8, 9, 10]
+    "agents": [8, 9, 10],
+    "nagents": 3,
+    "age": null,
+    "municipality": null,
+    "province": null,
+    "region": null
   }
 }

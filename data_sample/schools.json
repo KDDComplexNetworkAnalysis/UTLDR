@@ -3,18 +3,33 @@
     "category": "High School",
     "parent": null,
     "child": ["S1_1", "S1_2"],
-    "agents": [11, 12, 13]
+    "agents": [11, 12, 13],
+    "nagents": 3,
+    "age": null,
+    "municipality": null,
+    "province": null,
+    "region": null
   },
   "S1_1": {
     "category": "High School",
     "parent": "S1",
     "child": null,
-    "agents": [11, 12]
+    "agents": [11, 12],
+      "nagents": 2,
+    "age": 5,
+    "municipality": null,
+    "province": null,
+    "region": null
   },
   "S1_2": {
     "category": "High School",
     "parent": "S1",
     "child": null,
-    "agents": [13]
+    "agents": [13, 14],
+    "nagents": 1,
+    "age": 5,
+    "municipality": null,
+    "province": null,
+    "region": null
   }
 }
