@@ -284,7 +284,7 @@ class DiffusionModel(object):
 
         delta = {}
         for n, v in future.utils.iteritems(actual_status):
-            if n in self.status and v != self.status[n]:
+            if n in self.status and v != self.status[n]: #@todo: check cndition
                 changes[self.status[n]] -= 1
                 changes[v] += 1
                 delta[int(n)] = actual_status[n]

@@ -7,29 +7,33 @@ from src.AgentData import *
 
 region = 9  # Tuscany
 
-activeness = SocialActiveness(filename="italy_data/activeness.json", gz=False)
-households = SocialContext(filename=f"italy_data/households/households_{region}.json.gz", gz=True)
-workplaces = SocialContext(filename=f"italy_data/private_sector/private_sector_{region}.json.gz", gz=True)
-schools = SocialContext(filename=f"italy_data/schools/schools_{region}.json.gz", gz=True)
 census = SocialContext(filename=f"italy_data/census/census_{region}.json.gz", gz=True)
 agents = AgentList(filename=f"italy_data/agents/agents_{region}.json.gz", gz=True)
+activeness = SocialActiveness(filename="italy_data/activeness.json", gz=False)
+households = SocialContext(filename=f"italy_data/households/households_{region}.json.gz", gz=True)
+
+workplaces = SocialContext(filename=f"italy_data/private_sector/private_sector_{region}.json.gz", gz=True)
+workplaces.update(filename=f"italy_data/public_sector/public_sector_{region}.json.gz", gz=True)
+
+schools = SocialContext(filename=f"italy_data/schools/schools_{region}.json.gz", gz=True)
+schools.update(filename=f"italy_data/universities/universities_{region}.json.gz", gz=True)
 
 ctx = Contexts(households, census, workplaces, schools, activeness)
 
 model = UTLDR3(agents=agents, contexts=ctx)
 config = mc.Configuration()
 
-config.add_model_parameter("fraction_infected", 0.0002)
+config.add_model_parameter("fraction_infected", 0.00002)
 config.add_model_parameter("tracing_days", 0)
 config.add_model_parameter("start_day", 1)
 config.add_model_parameter("mobility", 0.05)
 
 #### Phase 0: Before Lockdown
 config.add_model_parameter("sigma", 1/4)
-config.add_model_parameter("beta", 0.006)
+config.add_model_parameter("beta", 0.01)
 config.add_model_parameter("beta_e", 0.0002)
-config.add_model_parameter("gamma", 0.003)
-config.add_model_parameter("omega", 0.0005)
+config.add_model_parameter("gamma", 0.025)
+config.add_model_parameter("omega", 0.02)
 
 model.set_initial_status(config)
 iterations = model.iteration_bunch(15)
@@ -60,13 +64,13 @@ model.update_model_parameter("kappa_i", 0.1)
 # Handling lethality/recovery rates
 model.update_model_parameter("gamma_t", 0.08)
 model.update_model_parameter("gamma_f", 0.1)
-model.update_model_parameter("omega_t", 0.01)
-model.update_model_parameter("omega_f", 0.08)
+model.update_model_parameter("omega_t", 0.02)
+model.update_model_parameter("omega_f", 0.03)
 
 # Lockdown
 model.update_model_parameter("mobility", 0.008)
-model.update_model_parameter("lambda", 0.8)
-model.update_model_parameter("mu", 1/84)
+model.update_model_parameter("lambda", 1)
+model.update_model_parameter("mu", 0) #1/84
 
 model.set_lockdown()
 iterations1 = model.iteration_bunch(84)

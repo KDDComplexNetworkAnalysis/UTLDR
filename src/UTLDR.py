@@ -151,7 +151,7 @@ class UTLDR3(DiffusionModel):
                     "descr": "Lockdown duration (1/expected iterations)",
                     "range": [0, 1],
                     "optional": True,
-                    "default": 1
+                    "default": 0
                 },
                 "icu_b": {
                     "descr": "Beds availability in ICU (absolute value)",
@@ -207,6 +207,7 @@ class UTLDR3(DiffusionModel):
         """
 
         actual_status = {}
+        #actual_status = {node: nstatus for node, nstatus in self.status.items()}
         self.current_active = {}
         self.current_day = (self.actual_iteration % 7) + 1
 
@@ -519,7 +520,11 @@ class UTLDR3(DiffusionModel):
             bt = np.random.random_sample()
             agv = self.agents.get_agent(v)
             if bt < self.__get_threshold(agv, activation):  # identifying the proper beta for the neighbor
-                actual_status[v] = self.available_statuses['Exposed']
+                if self.status[v] == self.available_statuses['Lockdown_Susceptible']:
+                    actual_status[v] = self.available_statuses['Lockdown_Exposed']
+                else:
+                    actual_status[v] = self.available_statuses['Exposed']
+
                 self.current_active[v] = None
                 infected.append((v, self.actual_iteration))
 
