@@ -284,22 +284,22 @@ class DiffusionModel(object):
 
         delta = {}
         for n, v in future.utils.iteritems(actual_status):
-            if n in self.status and v != self.status[n]: #@todo: rev
+            if n in self.status and v != self.status[n]:
                 changes[self.status[n]] -= 1
                 changes[v] += 1
-                delta[n] = actual_status[n]
+                delta[int(n)] = actual_status[n]
 
         freq = Counter(self.status.values()).most_common()
         for i in freq:
             old_status_count[i[0]] = i[1]
 
         for k, v in old_status_count.items():
-            actual_status_count[k] = v
+            actual_status_count[int(k)] = v
 
         for k, v in changes.items():
-            actual_status_count[k] += v
+            actual_status_count[int(k)] += v
 
-        status_delta = {st: actual_status_count[st] - old_status_count[st] for st in actual_status_count}
+        status_delta = {int(st): int(actual_status_count[st] - old_status_count[st]) for st in actual_status_count}
 
         return delta, actual_status_count, status_delta
 

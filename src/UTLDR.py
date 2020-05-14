@@ -2,6 +2,7 @@ from .DiffusionModel import DiffusionModel
 from .AgentData import ContactHistory
 import numpy as np
 from enum import Enum
+import tqdm
 
 
 __author__ = ["Giulio Rossetti", "Letizia Milli", "Salvatore Citraro"]
@@ -187,6 +188,17 @@ class UTLDR3(DiffusionModel):
             "edges": dict(),
         }
 
+    def update_model_parameter(self, name, value):
+        """
+
+        :param name:
+        :param value:
+        :return:
+        """
+
+        if name in self.params['model']:
+            self.params['model'][name] = value
+
     def iteration(self, node_status=True):
         """
 
@@ -207,14 +219,14 @@ class UTLDR3(DiffusionModel):
             self.actual_iteration += 1
             delta, node_count, status_delta = self.status_delta(actual_status)
             if node_status:
-                return {"iteration": 0, "status": actual_status.copy(),
-                        "node_count": node_count.copy(), "status_delta": status_delta.copy()}
+                return {"iteration": 0, "status": self.status.copy(),
+                        "node_count": node_count, "status_delta": status_delta}
             else:
                 return {"iteration": 0, "status": {},
-                        "node_count": node_count.copy(), "status_delta": status_delta.copy()}
+                        "node_count": node_count, "status_delta": status_delta}
 
         # iterate over active agents
-        for aid in self.active:
+        for aid in tqdm.tqdm(self.active):
 
             ag = self.agents.get_agent(aid)
             u = ag.aid
@@ -347,6 +359,7 @@ class UTLDR3(DiffusionModel):
 
             elif u_status == self.available_statuses['Recovered']:
                 self.c_history.delete(u)
+
 #                immunity = np.random.random_sample()
 #                if immunity < self.__get_threshold(ag, 's'):
 #                    actual_status[u] = self.available_statuses['Susceptible']
@@ -368,11 +381,11 @@ class UTLDR3(DiffusionModel):
         self.actual_iteration += 1
 
         if node_status:
-            return {"iteration": self.actual_iteration - 1, "status": delta.copy(),
-                    "node_count": node_count.copy(), "status_delta": status_delta.copy()}
+            return {"iteration": self.actual_iteration - 1, "status": delta,
+                    "node_count": node_count, "status_delta": status_delta}
         else:
             return {"iteration": self.actual_iteration - 1, "status": {},
-                    "node_count": node_count.copy(), "status_delta": status_delta.copy()}
+                    "node_count": node_count, "status_delta": status_delta}
 
     ###################################################################################################################
 
