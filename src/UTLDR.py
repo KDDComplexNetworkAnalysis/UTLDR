@@ -44,8 +44,11 @@ class UTLDR3(DiffusionModel):
         self.params['nodes']['ICU'] = {n: False for n in self.agents.population}
         self.params['nodes']['filtered'] = {n: Sociality.Normal for n in self.agents.population}
         self.current_active = {}
+        self.active = None
         self.icu_b = self.agents.number_of_nodes()
         self.current_day = Weekdays.Monday
+        self.identified_cases = 0
+        self.mobility_limits = None
 
         self.name = "UTLDR"
 
@@ -207,7 +210,7 @@ class UTLDR3(DiffusionModel):
         """
 
         actual_status = {}
-        #actual_status = {node: nstatus for node, nstatus in self.status.items()}
+        # actual_status = {node: nstatus for node, nstatus in self.status.items()}
         self.current_active = {}
         self.current_day = (self.actual_iteration % 7) + 1
 
@@ -221,10 +224,10 @@ class UTLDR3(DiffusionModel):
             delta, node_count, status_delta = self.status_delta(actual_status)
             if node_status:
                 return {"iteration": 0, "status": self.status.copy(),
-                        "node_count": node_count, "status_delta": status_delta}
+                        "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
             else:
                 return {"iteration": 0, "status": {},
-                        "node_count": node_count, "status_delta": status_delta}
+                        "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
 
         # iterate over active agents
         for aid in tqdm.tqdm(self.active):
@@ -319,20 +322,28 @@ class UTLDR3(DiffusionModel):
             elif u_status == self.available_statuses['Lockdown_Susceptible']:
                 # test lockdown exit
                 exit_flag = np.random.random_sample()  # loockdown acceptance
-                if exit_flag < self.__get_threshold(ag, 'mu'):
+                if 0 < exit_flag < self.__get_threshold(ag, 'mu'):
                     actual_status[u] = self.available_statuses['Susceptible']
                     self.__ripristinate_social_contacts(u)
 
             elif u_status == self.available_statuses['Lockdown_Exposed']:
-                # test lockdown exit
-                exit_flag = np.random.random_sample()  # loockdown exit
-                if exit_flag < self.__get_threshold(ag, 'mu'):
-                    actual_status[u] = self.available_statuses['Exposed']
-                    self.__ripristinate_social_contacts(u)
+                neighbors = self.__get_neighbors(ag, lockdown=True)
+                actual_status = self.__infect_neighbors(u, neighbors, actual_status, exposed=True)
+
+                # check testing
+                tested = np.random.random_sample()  # selection for testing
+                if not self.params['nodes']['tested'][u] and tested < self.__get_threshold(ag, 'phi_e'):
+                    actual_status = self.__test_exposition(ag, actual_status)
                 else:
-                    at = np.random.random_sample()
-                    if at < self.__get_threshold(ag, 'sigma'):
-                        actual_status[u] = self.available_statuses['Lockdown_Infected']
+                    # test lockdown exit
+                    exit_flag = np.random.random_sample()  # loockdown exit
+                    if 0 < exit_flag < self.__get_threshold(ag, 'mu'):
+                        actual_status[u] = self.available_statuses['Exposed']
+                        self.__ripristinate_social_contacts(u)
+                    else:
+                        at = np.random.random_sample()
+                        if at < self.__get_threshold(ag, 'sigma'):
+                            actual_status[u] = self.available_statuses['Lockdown_Infected']
 
             elif u_status == self.available_statuses['Lockdown_Infected']:
 
@@ -340,21 +351,26 @@ class UTLDR3(DiffusionModel):
                 neighbors = self.__get_neighbors(ag, lockdown=True)
                 actual_status = self.__infect_neighbors(u, neighbors, actual_status)
 
-                # test lockdown exit
-                exit_flag = np.random.random_sample()
-
-                if exit_flag < self.__get_threshold(ag, 'mu'):
-                    actual_status[0] = self.available_statuses['Infected']
-                    self.__ripristinate_social_contacts(u)
-
+                # check testing
+                tested = np.random.random_sample()  # selection for testing
+                if not self.params['nodes']['tested'][u] and tested < self.__get_threshold(ag, 'phi_i'):
+                    actual_status = self.__test_infection(ag, actual_status)
                 else:
-                    dead = np.random.random_sample()
-                    if dead < self.__get_threshold(ag, 'omega'):
-                        actual_status[u] = self.available_statuses['Dead']
+                    # test lockdown exit
+                    exit_flag = np.random.random_sample()
+
+                    if 0 < exit_flag < self.__get_threshold(ag, 'mu'):
+                        actual_status[0] = self.available_statuses['Infected']
+                        self.__ripristinate_social_contacts(u)
+
                     else:
-                        recovered = np.random.random_sample()
-                        if recovered < self.__get_threshold(ag, 'gamma'):
-                            actual_status[u] = self.available_statuses['Recovered']
+                        dead = np.random.random_sample()
+                        if dead < self.__get_threshold(ag, 'omega'):
+                            actual_status[u] = self.available_statuses['Dead']
+                        else:
+                            recovered = np.random.random_sample()
+                            if recovered < self.__get_threshold(ag, 'gamma'):
+                                actual_status[u] = self.available_statuses['Recovered']
 
             ####################### Resolved Compartments ###########################
 
@@ -383,10 +399,10 @@ class UTLDR3(DiffusionModel):
 
         if node_status:
             return {"iteration": self.actual_iteration - 1, "status": delta,
-                    "node_count": node_count, "status_delta": status_delta}
+                    "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
         else:
             return {"iteration": self.actual_iteration - 1, "status": {},
-                    "node_count": node_count, "status_delta": status_delta}
+                    "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
 
     ###################################################################################################################
 
@@ -399,7 +415,7 @@ class UTLDR3(DiffusionModel):
         """
         self.icu_b = max(0, self.icu_b + n)
 
-    def set_lockdown(self, workplaces=None):
+    def set_lockdown(self, to_close=None):
         """
         Impose the beginning of a lockdown
 
@@ -410,13 +426,17 @@ class UTLDR3(DiffusionModel):
 
         for u, ag in self.agents.population.items():
 
-            candidate = True
-            if workplaces is not None and 'work' in self.params['nodes']:
-                if len(set(workplaces) & set(self.params['nodes']['work'][u])) == 0:
-                    candidate = False
+            if to_close is not None:
+                category = []
+                if ag.work is not None:
+                    category.append(self.contexts.get_workplace_category(ag.work))
+                if ag.school is not None:
+                    category.append(self.contexts.get_school_category(ag.school))
 
-            if not candidate:
-                continue
+                intersection = set(category) & set(to_close)
+
+                if len(intersection) == 0:
+                    continue
 
             # loockdown acceptance
             la = np.random.random_sample()
@@ -442,9 +462,9 @@ class UTLDR3(DiffusionModel):
         for k, v in actual_status.items():
             self.status[k] = v
         return {"iteration": self.actual_iteration - 1, "status": {}, "node_count": node_count.copy(),
-                "status_delta": status_delta.copy()}
+                "status_delta": status_delta.copy(), "identified_cases": self.identified_cases}
 
-    def unset_lockdown(self, workplaces=None):
+    def unset_lockdown(self, to_release=None):
         """
         Remove the lockdown social limitations
 
@@ -455,15 +475,21 @@ class UTLDR3(DiffusionModel):
         for _, ag in self.agents.population.items():
             u = ag.aid
             flag = False
-            if workplaces is None:
+            if to_release is None:
                 self.__ripristinate_social_contacts(u)
                 flag = True
             else:
-                for w in workplaces:
-                    if (ag.work is not None and w in ag.work) or (ag.school is not None and w in ag.school):
-                        self.__ripristinate_social_contacts(u)
-                        flag = True
-                        break
+                category = []
+                if ag.work is not None:
+                    category.append(self.contexts.get_workplace_category(ag.work))
+                if ag.school is not None:
+                    category.append(self.contexts.get_school_category(ag.school))
+
+                intersection = set(category) & set(to_release)
+
+                if len(intersection) > 0:
+                    self.__ripristinate_social_contacts(u)
+                    flag = True
 
             if flag:
                 if self.status[u] == self.available_statuses['Lockdown_Susceptible']:
@@ -478,7 +504,7 @@ class UTLDR3(DiffusionModel):
         for k, v in actual_status.items():
             self.status[k] = v
         return {"iteration": self.actual_iteration + 1, "status": {}, "node_count": node_count.copy(),
-                "status_delta": status_delta.copy()}
+                "status_delta": status_delta.copy(), "identified_cases": self.identified_cases}
 
     def __limit_social_contacts(self, ag, event='Tested'):
         """
@@ -522,7 +548,7 @@ class UTLDR3(DiffusionModel):
             if bt < self.__get_threshold(agv, activation):  # identifying the proper beta for the neighbor
                 if self.status[v] == self.available_statuses['Lockdown_Susceptible']:
                     actual_status[v] = self.available_statuses['Lockdown_Exposed']
-                else:
+                elif self.status[v] == self.available_statuses['Susceptible']:
                     actual_status[v] = self.available_statuses['Exposed']
 
                 self.current_active[v] = None
@@ -561,7 +587,7 @@ class UTLDR3(DiffusionModel):
         if self.params['nodes']['filtered'][u] == Sociality.Normal:
             weekend = self.current_day in [Weekdays.Saturday, Weekdays.Sunday]  # checking for work related activities
             neighbors = self.contexts.get_neighbors(ag, weekend=weekend)
-        elif self.params['nodes']['filtered'][u] == Sociality.Lockdown:
+        elif self.params['nodes']['filtered'][u] == Sociality.Lockdown:  # Lockdown: only household
             neighbors = self.contexts.get_neighbors(ag, restrictions=True)
         else:
             neighbors = []
@@ -578,10 +604,8 @@ class UTLDR3(DiffusionModel):
                          (self.params['nodes']['filtered'][n] == Sociality.Lockdown and
                           ag.household == self.agents.get_agent(n).household)]
         else:
-            neighbors = [n for n in neighbors if self.status[n] == self.available_statuses['Lockdown_Susceptible'] and
-                         self.params['nodes']['filtered'][n] == Sociality.Normal or
-                         (self.params['nodes']['filtered'][n] == Sociality.Lockdown and
-                          ag.household == self.agents.get_agent(n).household)]
+            neighbors = [n for n in neighbors if self.status[n] in
+                         [self.available_statuses['Susceptible'], self.available_statuses['Lockdown_Susceptible']]]
 
         return neighbors
 
@@ -590,6 +614,8 @@ class UTLDR3(DiffusionModel):
         res = np.random.random_sample()  # probability of false negative result
 
         if res > self.__get_threshold(ag, 'kappa_i'):
+            self.identified_cases += 1
+
             self.__limit_social_contacts(ag, 'Tested')
 
             # contact tracing
@@ -616,6 +642,8 @@ class UTLDR3(DiffusionModel):
         u = ag.aid
         res = np.random.random_sample()  # probability of false negative result
         if res > self.__get_threshold(ag, 'kappa_e'):
+            self.identified_cases += 1
+
             self.__limit_social_contacts(ag, 'Tested')
 
             # contact tracing
@@ -675,9 +703,17 @@ class UTLDR3(DiffusionModel):
         p_weights.append(1-self.params['model']['p_mobility'])
         provinces.append(agent_province)
 
-        selected_province = np.random.choice(provinces, 1, p=p_weights)[0]
-        municipalities_selected_province = self.contexts.contexts['census'].cells[str(selected_province)]['child']
-        selected_municipality = np.random.choice(municipalities_selected_province, 1)[0]
+        if self.mobility_limits == 'province':
+            selected_province = agent_province
+        else:
+            selected_province = np.random.choice(provinces, 1, p=p_weights)[0]
+
+        if self.mobility_limits == 'municipality':
+            selected_municipality = agent_municipality
+        else:
+            municipalities_selected_province = self.contexts.contexts['census'].cells[str(selected_province)]['child']
+            selected_municipality = np.random.choice(municipalities_selected_province, 1)[0]
+
         census_selected_municipality = self.contexts.contexts['census'].cells[str(selected_municipality)]['child']
         if census_selected_municipality is not None:
             selected_census = np.random.choice(census_selected_municipality, 1)[0]
@@ -685,3 +721,9 @@ class UTLDR3(DiffusionModel):
             return neighbors
 
         return []
+
+    def set_mobility_limits(self, value):
+        self.mobility_limits = value
+
+    def unset_mobility_limits(self):
+        self.mobility_limits = None

@@ -303,7 +303,6 @@ class DiffusionModel(object):
 
         return delta, actual_status_count, status_delta
 
-
     def build_trends(self, iterations):
         """
         Build node status and node delta trends from model iteration bunch
@@ -313,12 +312,7 @@ class DiffusionModel(object):
         """
         status_delta = defaultdict(list)
         node_count = defaultdict(list)
-
-        #for s in self.available_statuses.values():
-        #    status_delta[s] = []
-
-        #status_delta = {status: [] for status in list(self.available_statuses.values())}
-        #node_count = {status: [] for status in list(self.available_statuses.values())}
+        identified = []
 
         for it in iterations:
             for st in list(self.available_statuses.values()):
@@ -335,4 +329,7 @@ class DiffusionModel(object):
                     else:
                         node_count[st].append(0)
 
-        return [{"trends": {"node_count": node_count, "status_delta": status_delta}}]
+            # identified cases:
+            identified.append(it['identified_cases'])
+
+        return [{"trends": {"node_count": node_count, "status_delta": status_delta, 'identified_cases': identified}}]

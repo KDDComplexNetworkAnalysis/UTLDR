@@ -187,11 +187,12 @@ class TotalCasesTrend(DiffusionPlot):
         hospitalized_icu = self.trends[0]['trends']['node_count'][self.model.available_statuses['Hospitalized_severe_ICU']]
         hospitalized_severe = self.trends[0]['trends']['node_count'][self.model.available_statuses['Hospitalized_severe']]
         identified_exposed = self.trends[0]['trends']['node_count'][self.model.available_statuses['Identified_Exposed']]
+        identified_cases = self.trends[0]['trends']['identified_cases']
 
         for i in [dead, recovered, exposed, infected_lokdown, exposed_lockdown, hospitalized_icu, hospitalized_mild,hospitalized_severe, identified_exposed]:
             infected = np.add(infected, i)
 
-        series = {"Total": infected}
+        series = {"Total": infected, "Identified": identified_cases}
 
         return series
 

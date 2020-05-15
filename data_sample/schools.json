@@ -15,7 +15,7 @@
     "parent": "S1",
     "child": null,
     "agents": [11, 12],
-      "nagents": 2,
+    "nagents": 2,
     "age": 5,
     "municipality": null,
     "province": null,

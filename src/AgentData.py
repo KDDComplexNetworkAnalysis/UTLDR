@@ -113,6 +113,12 @@ class Contexts(object):
     def get_workplace_sample(self, wid, activity=1):
         return self.contexts['workplaces'].get_sample_agents(wid, activity)
 
+    def get_workplace_category(self, wid):
+        return self.contexts['workplaces'].get_category(wid)
+
+    def get_school_category(self, wid):
+        return self.contexts['schools'].get_category(wid)
+
     def get_neighbors(self, agent, restrictions=False, weekend=False, other_census=None):
         household = self.get_household(agent.household)
         if not restrictions:
@@ -189,7 +195,10 @@ class ContactHistory(object):
         self.agent_to_queue[node] = [(n, t) for n, t in self.agent_to_queue[node] if delta_iteration <= iteration-t]
 
     def delete(self, node):
-        del self.agent_to_queue[node]
+        if node in self.agent_to_queue:
+            del self.agent_to_queue[node]
+        elif str(node) in self.agent_to_queue:
+            del self.agent_to_queue[str(node)]
 
 @dataclass
 class Agent(object):
