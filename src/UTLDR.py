@@ -1,7 +1,7 @@
 from .DiffusionModel import DiffusionModel
 from .AgentData import ContactHistory
 import numpy as np
-from enum import Enum
+from .Entities import Weekdays, Sociality
 import tqdm
 
 
@@ -9,20 +9,7 @@ __author__ = ["Giulio Rossetti", "Letizia Milli", "Salvatore Citraro"]
 __license__ = "BSD-2-Clause"
 
 
-class Sociality(Enum):
-    Normal = 0
-    Quarantine = 1
-    Lockdown = 2
 
-
-class Weekdays(Enum):
-    Monday = 1
-    Tuesday	= 2
-    Wednesday = 3
-    Thursday = 4
-    Friday = 5
-    Saturday = 6
-    Sunday = 7
 
 
 class UTLDR3(DiffusionModel):
@@ -415,7 +402,7 @@ class UTLDR3(DiffusionModel):
         """
         self.icu_b = max(0, self.icu_b + n)
 
-    def set_lockdown(self, to_close=None):
+    def set_lockdown(self, to_close=None, to_keep=None):
         """
         Impose the beginning of a lockdown
 
@@ -436,6 +423,18 @@ class UTLDR3(DiffusionModel):
                 intersection = set(category) & set(to_close)
 
                 if len(intersection) == 0:
+                    continue
+
+            if to_keep is not None:
+                category = []
+                if ag.work is not None:
+                    category.append(self.contexts.get_workplace_category(ag.work))
+                if ag.school is not None:
+                    category.append(self.contexts.get_school_category(ag.school))
+
+                intersection = set(category) & set(to_keep)
+
+                if len(intersection) > 0:
                     continue
 
             # loockdown acceptance
@@ -474,10 +473,9 @@ class UTLDR3(DiffusionModel):
 
         for _, ag in self.agents.population.items():
             u = ag.aid
-            flag = False
+
             if to_release is None:
                 self.__ripristinate_social_contacts(u)
-                flag = True
             else:
                 category = []
                 if ag.work is not None:
@@ -489,15 +487,15 @@ class UTLDR3(DiffusionModel):
 
                 if len(intersection) > 0:
                     self.__ripristinate_social_contacts(u)
-                    flag = True
+                else:
+                    continue
 
-            if flag:
-                if self.status[u] == self.available_statuses['Lockdown_Susceptible']:
-                    actual_status[u] = self.available_statuses['Susceptible']
-                elif self.status[u] == self.available_statuses['Lockdown_Exposed']:
-                    actual_status[u] = self.available_statuses["Exposed"]
-                elif self.status[u] == self.available_statuses['Lockdown_Infected']:
-                    actual_status[u] = self.available_statuses['Infected']
+            if self.status[u] == self.available_statuses['Lockdown_Susceptible']:
+                actual_status[u] = self.available_statuses['Susceptible']
+            elif self.status[u] == self.available_statuses['Lockdown_Exposed']:
+                actual_status[u] = self.available_statuses["Exposed"]
+            elif self.status[u] == self.available_statuses['Lockdown_Infected']:
+                actual_status[u] = self.available_statuses['Infected']
 
         delta, node_count, status_delta = self.status_delta(actual_status)
 

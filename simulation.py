@@ -4,8 +4,9 @@ from ndlib.viz.mpl.DiffusionTrend import DiffusionTrend
 from src.UTLDR import UTLDR3
 from src.viz.Trends import *
 from src.AgentData import *
+from src.Entities import *
 
-region = 9  # Tuscany
+region = Regions.Toscana.value
 
 census = SocialContext(filename=f"italy_data/census/census_{region}.json.gz", gz=True)
 agents = AgentList(filename=f"italy_data/agents/agents_{region}.json.gz", gz=True)
@@ -23,17 +24,17 @@ ctx = Contexts(households, census, workplaces, schools, activeness)
 model = UTLDR3(agents=agents, contexts=ctx)
 config = mc.Configuration()
 
-config.add_model_parameter("fraction_infected", 0.00002)
+config.add_model_parameter("fraction_infected", 0.000002)
 config.add_model_parameter("tracing_days", 0)
-config.add_model_parameter("start_day", 1)
+config.add_model_parameter("start_day", Weekdays.Monday.value)
 config.add_model_parameter("mobility", 0.05)
 
 #### Phase 0: Before Lockdown
-config.add_model_parameter("sigma", 1/4) # incubation of 4 days
-config.add_model_parameter("beta", 0.01)
+config.add_model_parameter("sigma", 1/4)  # incubation of 4 days
+config.add_model_parameter("beta", 0.06)
 config.add_model_parameter("beta_e", 0.0002)
-config.add_model_parameter("gamma", 0.025)
-config.add_model_parameter("omega", 0.01)
+config.add_model_parameter("gamma", 0.04)
+config.add_model_parameter("omega", 0.005)
 
 # ICU
 config.add_model_parameter("icu_b", 500)
@@ -67,15 +68,15 @@ model.set_mobility_limits("municipality")
 # Handling lethality/recovery rates
 model.update_model_parameter("gamma_t", 0.08)
 model.update_model_parameter("gamma_f", 0.1)
-model.update_model_parameter("omega_t", 0.02)
-model.update_model_parameter("omega_f", 0.03)
+model.update_model_parameter("omega_t", 0.005)
+model.update_model_parameter("omega_f", 0.006)
 
 # Lockdown
 model.update_model_parameter("mobility", 0.008)
 model.update_model_parameter("lambda", 1)
 model.update_model_parameter("mu", 0) #1/84
 
-model.set_lockdown(['Q'])
+model.set_lockdown(to_keep=[Ateco.Sanita.value])
 iterations1 = model.iteration_bunch(84)
 iterations.extend(iterations1)
 json.dump(iterations, open("phase1.json", "w"))
@@ -89,11 +90,10 @@ viz = DiffusionTrend(model, trends)
 viz.normalized = False
 viz.plot(filename="trend1.pdf", statuses=[
     'Infected', "Hospitalized_mild",
-    "Hospitalized_severe_ICU", "Hospitalized_severe",
-    "Lockdown_Exposed", "Dead"])
+    "Hospitalized_severe_ICU", "Hospitalized_severe", "Dead"])
 
 #### Phase 2: Partial release of lockdown (schools, research - not university), mobility allowed at provincial level
-model.unset_lockdown(to_release=['P', 'Q', 'school'])
+model.unset_lockdown(to_release=[Education.School.value, Ateco.PA_Difesa.value])
 model.set_mobility_limits("province")
 
 iterations2 = model.iteration_bunch(30)
@@ -109,5 +109,4 @@ viz = DiffusionTrend(model, trends)
 viz.normalized = False
 viz.plot(filename="trend2.pdf", statuses=[
     'Infected', "Hospitalized_mild",
-    "Hospitalized_severe_ICU", "Hospitalized_severe",
-    "Lockdown_Exposed", "Dead"])
+    "Hospitalized_severe_ICU", "Hospitalized_severe", "Dead"])

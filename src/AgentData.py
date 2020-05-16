@@ -60,6 +60,10 @@ class SocialContext(object):
             return []
 
     def get_category(self, cell):
+        if self.cells[cell]['parent'] is not None:
+            parent = self.cells[cell]['parent']
+            return self.cells[parent]['category']
+
         return self.cells[cell]['category']
 
     def get_parent(self, cell):
