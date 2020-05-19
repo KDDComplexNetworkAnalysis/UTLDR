@@ -223,3 +223,50 @@ class TotalCasesTrend(DiffusionPlot):
         else:
             plt.show()
 
+
+class RtTrend(DiffusionPlot):
+
+    def __init__(self, model, trends):
+        """
+        :param model: The model object
+        :param trends: The computed simulation trends
+        """
+        super(self.__class__, self).__init__(model, trends)
+        self.ylabel = "#Nodes"
+        self.title = "Rt"
+
+    def iteration_series(self):
+
+        Rt = self.trends[0]['trends']['Rt']
+
+        series = {"Rt": Rt}
+
+        return series
+
+    def plot(self, filename=None):
+        """
+        Generates the plot
+
+        :param filename: Output filename
+        """
+
+        pres = self.iteration_series()
+        plt.figure(figsize=(20, 10))
+        mx = 0
+        for k, l in pres.items():
+            mx = len(l)
+            plt.plot(list(range(0, mx)), l, lw=2, label=k, alpha=0.5)
+        plt.axhline(y=1, color='r', linestyle='-')
+
+        plt.grid(axis="y")
+        plt.xlabel("Iterations", fontsize=24)
+        plt.ylabel(self.ylabel, fontsize=24)
+        plt.legend(loc="best", fontsize=18)
+        plt.xlim((0, mx))
+
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+            plt.clf()
+        else:
+            plt.show()

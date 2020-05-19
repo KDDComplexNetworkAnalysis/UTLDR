@@ -2,14 +2,12 @@ from .DiffusionModel import DiffusionModel
 from .AgentData import ContactHistory
 import numpy as np
 from .Entities import Weekdays, Sociality
+from collections import defaultdict
 import tqdm
 
 
 __author__ = ["Giulio Rossetti", "Letizia Milli", "Salvatore Citraro"]
 __license__ = "BSD-2-Clause"
-
-
-
 
 
 class UTLDR3(DiffusionModel):
@@ -36,6 +34,7 @@ class UTLDR3(DiffusionModel):
         self.current_day = Weekdays.Monday
         self.identified_cases = 0
         self.mobility_limits = None
+        self.r = defaultdict(int)
 
         self.name = "UTLDR"
 
@@ -81,13 +80,13 @@ class UTLDR3(DiffusionModel):
                     "descr": "Recovery rate - Severe in ICU (1/expected iterations)",
                     "range": [0, 1],
                     "optional": True,
-                    "default": 0.6
+                    "default": 0
                 },
                 "gamma_f": {
                     "descr": "Recovery rate - Severe not in ICU (1/expected iterations)",
                     "range": [0, 1],
                     "optional": True,
-                    "default": 0.95
+                    "default": 0
                 },
                 "omega": {
                     "descr": "Death probability - Mild, Asymptomatic, Paucisymptomatic",
@@ -209,12 +208,17 @@ class UTLDR3(DiffusionModel):
 
             self.actual_iteration += 1
             delta, node_count, status_delta = self.status_delta(actual_status)
+
+            r0 = (self.params['model']['beta_e'] + self.params['model']['beta']) / (self.params['model']['omega'] + self.params['model']['gamma'])
+
             if node_status:
                 return {"iteration": 0, "status": self.status.copy(),
-                        "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
+                        "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases,
+                        "Rt": r0}
             else:
                 return {"iteration": 0, "status": {},
-                        "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
+                        "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases,
+                        "Rt": r0}
 
         # iterate over active agents
         for aid in tqdm.tqdm(self.active):
@@ -252,10 +256,14 @@ class UTLDR3(DiffusionModel):
                 else:
                     recovered = np.random.random_sample()
                     if recovered < self.__get_threshold(ag, 'gamma'):
+                        if u in self.r:
+                            del self.r[u]
                         actual_status[u] = self.available_statuses['Recovered']
                     else:
                         dead = np.random.random_sample()
                         if dead < self.__get_threshold(ag, 'omega'):
+                            if u in self.r:
+                                del self.r[u]
                             actual_status[u] = self.available_statuses['Dead']
 
             ####################### Quarantined Compartments ###########################
@@ -278,29 +286,41 @@ class UTLDR3(DiffusionModel):
             elif u_status == self.available_statuses['Hospitalized_mild']:
                 recovered = np.random.random_sample()
                 if recovered < self.__get_threshold(ag, 'gamma'):
+                    if u in self.r:
+                        del self.r[u]
                     actual_status[u] = self.available_statuses['Recovered']
                 else:
                     dead = np.random.random_sample()
                     if dead < self.__get_threshold(ag, 'omega'):
+                        if u in self.r:
+                            del self.r[u]
                         actual_status[u] = self.available_statuses['Dead']
 
             elif u_status == self.available_statuses['Hospitalized_severe']:
                 recovered = np.random.random_sample()
                 if recovered < self.__get_threshold(ag, 'gamma_f'):
+                    if u in self.r:
+                        del self.r[u]
                     actual_status[u] = self.available_statuses['Recovered']
                 else:
                     dead = np.random.random_sample()
                     if dead < self.__get_threshold(ag, 'omega_f'):
+                        if u in self.r:
+                            del self.r[u]
                         actual_status[u] = self.available_statuses['Dead']
 
             elif u_status == self.available_statuses['Hospitalized_severe_ICU']:
                 recovered = np.random.random_sample()
                 if recovered < self.__get_threshold(ag, 'gamma_t'):
+                    if u in self.r:
+                        del self.r[u]
                     actual_status[u] = self.available_statuses['Recovered']
                     self.icu_b += 1
                 else:
                     dead = np.random.random_sample()
                     if dead < self.__get_threshold(ag, 'omega_t'):
+                        if u in self.r:
+                            del self.r[u]
                         actual_status[u] = self.available_statuses['Dead']
                         self.icu_b += 1
 
@@ -353,10 +373,14 @@ class UTLDR3(DiffusionModel):
                     else:
                         dead = np.random.random_sample()
                         if dead < self.__get_threshold(ag, 'omega'):
+                            if u in self.r:
+                                del self.r[u]
                             actual_status[u] = self.available_statuses['Dead']
                         else:
                             recovered = np.random.random_sample()
                             if recovered < self.__get_threshold(ag, 'gamma'):
+                                if u in self.r:
+                                    del self.r[u]
                                 actual_status[u] = self.available_statuses['Recovered']
 
             ####################### Resolved Compartments ###########################
@@ -384,12 +408,15 @@ class UTLDR3(DiffusionModel):
         self.active = self.current_active
         self.actual_iteration += 1
 
+        rt = 0 if len(self.r) == 0 else sum(list(self.r.values()))/len(self.r)
         if node_status:
             return {"iteration": self.actual_iteration - 1, "status": delta,
-                    "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
+                    "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases,
+                    "Rt": rt}
         else:
             return {"iteration": self.actual_iteration - 1, "status": {},
-                    "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases}
+                    "node_count": node_count, "status_delta": status_delta, "identified_cases": self.identified_cases,
+                    "Rt": rt}
 
     ###################################################################################################################
 
@@ -458,10 +485,12 @@ class UTLDR3(DiffusionModel):
 
         delta, node_count, status_delta = self.status_delta(actual_status)
 
+        rt = 0 if len(self.r) == 0 else sum(list(self.r.values()))/len(self.r)
         for k, v in actual_status.items():
             self.status[k] = v
         return {"iteration": self.actual_iteration - 1, "status": {}, "node_count": node_count.copy(),
-                "status_delta": status_delta.copy(), "identified_cases": self.identified_cases}
+                "status_delta": status_delta.copy(), "identified_cases": self.identified_cases,
+                "Rt": rt}
 
     def unset_lockdown(self, to_release=None):
         """
@@ -499,10 +528,12 @@ class UTLDR3(DiffusionModel):
 
         delta, node_count, status_delta = self.status_delta(actual_status)
 
+        rt = 0 if len(self.r) == 0 else sum(list(self.r.values()))/len(self.r)
         for k, v in actual_status.items():
             self.status[k] = v
         return {"iteration": self.actual_iteration + 1, "status": {}, "node_count": node_count.copy(),
-                "status_delta": status_delta.copy(), "identified_cases": self.identified_cases}
+                "status_delta": status_delta.copy(), "identified_cases": self.identified_cases,
+                "Rt": rt}
 
     def __limit_social_contacts(self, ag, event='Tested'):
         """
@@ -546,8 +577,12 @@ class UTLDR3(DiffusionModel):
             if bt < self.__get_threshold(agv, activation):  # identifying the proper beta for the neighbor
                 if self.status[v] == self.available_statuses['Lockdown_Susceptible']:
                     actual_status[v] = self.available_statuses['Lockdown_Exposed']
+                    self.r[v] = 0
+                    self.r[aid] += 1
                 elif self.status[v] == self.available_statuses['Susceptible']:
                     actual_status[v] = self.available_statuses['Exposed']
+                    self.r[v] = 0
+                    self.r[aid] += 1
 
                 self.current_active[v] = None
                 infected.append((v, self.actual_iteration))

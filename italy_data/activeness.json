@@ -12,42 +12,42 @@
     },
     "15": {
       "work": 0,
-      "census": 0.09,
+      "census": 0.05,
       "school": 0.9
     },
     "20": {
       "work": 0,
-      "census": 0.2,
-      "school": 0.9
+      "census": 0.1,
+      "school": 0.6
     },
     "25": {
       "work": 0.4,
-      "census": 0.4,
-      "school": 0.4
+      "census": 0.1,
+      "school": 0.2
     },
     "30": {
       "work": 0.45,
-      "census": 0.35,
+      "census": 0.1,
       "school": 0
     },
     "35": {
       "work": 0.45,
-      "census": 0.2,
+      "census": 0.1,
       "school": 0
     },
     "40": {
       "work": 0.4,
-      "census": 0.2,
+      "census": 0.1,
       "school": 0
     },
     "45": {
       "work": 0.4,
-      "census": 0.15,
+      "census": 0.1,
       "school": 0
     },
     "50": {
       "work": 0.4,
-      "census": 0.15,
+      "census": 0.1,
       "school": 0
     },
     "55": {

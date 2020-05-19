@@ -312,6 +312,7 @@ class DiffusionModel(object):
         """
         status_delta = defaultdict(list)
         node_count = defaultdict(list)
+        rt = []
         identified = []
 
         for it in iterations:
@@ -331,5 +332,6 @@ class DiffusionModel(object):
 
             # identified cases:
             identified.append(it['identified_cases'])
+            rt.append(it['Rt'])
 
-        return [{"trends": {"node_count": node_count, "status_delta": status_delta, 'identified_cases': identified}}]
+        return [{"trends": {"node_count": node_count, "status_delta": status_delta, 'identified_cases': identified, 'Rt': rt}}]
